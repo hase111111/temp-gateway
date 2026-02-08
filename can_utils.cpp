@@ -9,8 +9,9 @@
 
 static int can_sock = -1;
 
-constexpr uint16_t CMD_SET_INPUT_POS = 0x00C;
 constexpr uint16_t CMD_SET_AXIS_REQUESTED_STATE = 0x007;
+constexpr uint16_t CMD_GET_ENCODER_ESTIMATES = 0x009;
+constexpr uint16_t CMD_SET_INPUT_POS = 0x00C;
 constexpr uint16_t CMD_SET_ABSOLUTE_POSITION = 0x019;
 
 void can_init(const char* ifname) {
@@ -63,4 +64,18 @@ void send_set_absolute_position(const int node_id, const float pos) {
     f.can_dlc = 4;
     std::memcpy(f.data, &pos, 4);
     write(can_sock, &f, sizeof(f));
+}
+
+bool get_position_only(int& node_id, float& pos) {
+    can_frame f{};
+    int n = read(can_sock, &f, sizeof(f));
+    if (n <= 0) return false;
+
+    uint16_t cmd = f.can_id & 0x1F;
+    if (cmd != CMD_GET_ENCODER_ESTIMATES) return false;
+
+    node_id = f.can_id >> 5;
+    std::memcpy(&pos, f.data, 4);  // data[0..3] だけ
+
+    return true;
 }

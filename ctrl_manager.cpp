@@ -12,6 +12,7 @@
 
 #include "can_utils.h"
 #include "global_variable.h"
+#include "constants.h"
 
 
 constexpr int CTRL_PORT = 60000;
@@ -27,6 +28,33 @@ static const int NODE_ID[16] = {
 };
 
 static std::thread ctrl_thread;
+
+// モータの0点キャリブレーションを行う.
+static void calibrate_zero_position() {
+    std::cout << "[CTRL] Potentiometer zero calibration command received. / ポテンショメータゼロ点キャリブレーションを行います．" << std::endl;
+
+    // ポテンショメータの最新値を取得する.
+    const auto pot_values = g_pot_values.Back();
+    
+    // 各関節に対して，ポテンショメータ値を送信する.
+    for (int i = 0; i < 16; ++i) {
+        // debug用
+        const int now = pot_values[i / 3][i % 3];
+        const int target = POT_DEFAULT_ANGLES[i];
+        float rot{};
+        get_position_only(i, rot);
+        std::cout << "[CTRL] Joint " << i
+                  << ": pot=" << now
+                  << ", target=" << target
+                  << ", odrive_pos=" << rot
+                  << std::endl;
+
+        // ODriveに絶対位置として送信する.
+        // send_set_absolute_position(NODE_ID[i], angle_rad);
+    }
+
+    std::cout << "[CTRL] Potentiometer zero calibration done. / ポテンショメータゼロ点キャリブレーションを完了しました." << std::endl;
+}
 
 static void ctrl_loop() {
     const int sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -82,10 +110,15 @@ static void ctrl_loop() {
             std::this_thread::sleep_for(std::chrono::seconds(10));
             g_thread_safe_store.Set<SystemState>("system_state", SystemState::CALIBRATED);
         } else if (cmd == 2 && state == SystemState::CALIBRATED) {
+            // 閉ループ開始にする．
             for (const auto& id : NODE_ID) {
                 send_axis_state(id, AXIS_STATE_CLOSED_LOOP_CONTROL);
             }
+        } else if (cmd == 3 && state == SystemState::CALIBRATED) {
+            // ここでポテンショメータ値をゼロ点キャリブレーションする．
+            calibrate_zero_position();
 
+            // READY状態にする．
             g_thread_safe_store.Set<SystemState>("system_state", SystemState::READY);
         } else if (cmd == 6 && state == SystemState::READY) {
             g_thread_safe_store.Set<SystemState>("system_state", SystemState::RUN);

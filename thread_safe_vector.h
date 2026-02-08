@@ -25,6 +25,11 @@ public:
         data_[index] = value;
     }
 
+    void PushBack(const T& value) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        data_.push_back(value);
+    }
+
     T Get(size_t index) const {
         std::lock_guard<std::mutex> lock(mutex_);
         return data_[index];

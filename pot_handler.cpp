@@ -24,8 +24,8 @@ constexpr int POT_TX_PORT = 50011;
 
 // ===== CAN =====
 constexpr uint32_t CAN_RESP_BASE   = 0x301;   // 0x301 - 0x306
-constexpr int      NUM_PICO        = 6;
-constexpr int      ADC_PER_PICO    = 3;
+// constexpr int      NUM_PICO        = 6;
+// constexpr int      ADC_PER_PICO    = 3;
 
 // ===== Packet =====
 static constexpr char POTQ_MAGIC[4] = {'P','O','T','Q'};
@@ -176,6 +176,9 @@ static void pot_loop() {
             if (should_print) {
                 std::cout << std::endl;
             }
+
+            // グローバル変数にも保存しておく．
+            g_pot_values.PushBack(latest);
         }
 
         if (!has_request) {
