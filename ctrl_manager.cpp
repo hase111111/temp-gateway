@@ -52,7 +52,7 @@ static void calibrate_zero_position() {
                 break;
             }
         }
-        
+
         if (all_done) {
             break;
         }
@@ -84,6 +84,9 @@ static void calibrate_zero_position() {
                 }
             }
         }
+
+        // 少し待つ.
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     
     // ODriveに絶対位置として送信する.
