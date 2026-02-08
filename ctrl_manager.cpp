@@ -177,7 +177,6 @@ static void ctrl_loop() {
         } else if (cmd == 7 && state == SystemState::RUN) {
             g_thread_safe_store.Set<SystemState>("system_state", SystemState::READY);
         } else if (cmd == 8) {
-            std::cout << "[CTRL] Stop all motors command received. / 全モータ停止コマンドを受信しました." << std::endl;
             for (const auto& id : NODE_ID) {
                 stop_odrive(id);
             }
