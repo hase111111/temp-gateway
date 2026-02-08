@@ -64,12 +64,12 @@ static void udj1_loop() {
 
     while (!g_thread_safe_store.Get<bool>("fin")) {
         const auto state = g_thread_safe_store.Get<SystemState>("system_state");
-        if (state == SystemState::RUN) {
+        if (state != SystemState::RUN) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             continue;
         }
 
-        ssize_t len = recvfrom(sock, buf, sizeof(buf), 0, nullptr, nullptr);
+        const ssize_t len = recvfrom(sock, buf, sizeof(buf), 0, nullptr, nullptr);
         if (len < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));

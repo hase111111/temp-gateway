@@ -201,9 +201,12 @@ static void ctrl_loop() {
             std::cout << "[CTRL] Start calibration command received. / キャリブレーション開始コマンドを受信しました." << std::endl;
             for (const auto& id : NODE_ID) {
                 send_axis_state(id, AXIS_STATE_FULL_CALIBRATION_SEQUENCE);
+
+                // ☆ 丹下さんのやつは同時にキャリブレーション始めると不安定になったので，無理だったら待ってみて．
+                // std::this_thread::sleep_for(std::chrono::seconds(1));
             }
             
-            std::this_thread::sleep_for(std::chrono::seconds(10));
+            std::this_thread::sleep_for(std::chrono::seconds(15));
             g_thread_safe_store.Set<SystemState>("system_state", SystemState::CALIBRATED);
             std::cout << "[CTRL] Calibration sequence sent. / キャリブレーションシーケンスを送信しました." << std::endl;
         } else if (cmd == 2 && state == SystemState::CALIBRATED) {
