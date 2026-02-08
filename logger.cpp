@@ -87,13 +87,13 @@ static void writer_loop() {
     }
 }
 
-void logger_start() {
+void start_logger_thread() {
 	std::cout << "[LOGGER] start / ログ書き込み開始." << std::endl;
     running = true;
     writer_thread = std::thread(writer_loop);
 }
 
-void logger_stop() {
+void stop_logger_thread() {
     // 書き込みを終了する．(loopが終了する．)
     running = false;
 

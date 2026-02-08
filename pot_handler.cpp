@@ -68,7 +68,7 @@ static void pot_loop() {
 
     uint8_t buf[1500];
 
-    while (!g_thread_safe_store.Get<bool>("shutdown") ) {
+    while (!g_thread_safe_store.Get<bool>("fin")) {
         sockaddr_in src{};
         socklen_t slen = sizeof(src);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <any>
+#include <mutex>
 #include <optional>
 #include <shared_mutex>
 #include <stdexcept>
