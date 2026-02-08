@@ -66,7 +66,8 @@ static void ctrl_loop() {
         if (len < 6) { continue; }
         if (std::memcmp(buf, "CTRL", 4) != 0) { continue; }
 
-        const uint8_t cmd = buf[4];
+        // const uint8_t cmd = buf[4];
+        const int8_t cmd = static_cast<int8_t>(g_thread_safe_store.Get<int>("cmd"));
 
         const SystemState state = g_thread_safe_store.Get<SystemState>("system_state");
         if (cmd == 1 && state == SystemState::INIT) {
