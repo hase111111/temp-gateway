@@ -13,3 +13,4 @@ void send_position(int node_id, float pos);
 void send_can_raw(uint32_t can_id, const uint8_t* data, uint8_t dlc);
 void send_set_absolute_position(int node_id, float pos);
 bool get_position_only(int& node_id, float& pos);
+void stop_odrive(int node_id);

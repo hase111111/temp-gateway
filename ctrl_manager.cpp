@@ -79,9 +79,11 @@ static void calibrate_zero_position() {
             // ポテンショメータ値を目標値に合わせるようにODriveに送信する.
             const float rot_diff = 0.1f;
             if (std::abs(target - now) > 10) {
-                send_position(NODE_ID[i], 
-                    target > now ? 
-                        current_rot + rot_diff : current_rot - rot_diff);
+                const auto send_pos = (now < target) ?
+                    current_rot + rot_diff :
+                    current_rot - rot_diff;
+                send_position(NODE_ID[i], send_pos);
+                std::cout << "[CTRL]   -> sending " << send_pos << " rot to ODrive." << std::endl;
             } else {
                 calibrated[i] = true;
             }
@@ -150,6 +152,7 @@ static void ctrl_loop() {
             
             std::this_thread::sleep_for(std::chrono::seconds(10));
             g_thread_safe_store.Set<SystemState>("system_state", SystemState::CALIBRATED);
+            std::cout << "[CTRL] Calibration sequence sent. / キャリブレーションシーケンスを送信しました." << std::endl;
         } else if (cmd == 2 && state == SystemState::CALIBRATED) {
             // 閉ループ開始にする．
             for (const auto& id : NODE_ID) {
@@ -165,6 +168,12 @@ static void ctrl_loop() {
             g_thread_safe_store.Set<SystemState>("system_state", SystemState::RUN);
         } else if (cmd == 7 && state == SystemState::RUN) {
             g_thread_safe_store.Set<SystemState>("system_state", SystemState::READY);
+        } else if (cmd == 8) {
+            std::cout << "[CTRL] Stop all motors command received. / 全モータ停止コマンドを受信しました." << std::endl;
+            for (const auto& id : NODE_ID) {
+                stop_odrive(id);
+            }
+            g_thread_safe_store.Set<SystemState>("system_state", SystemState::INIT);
         }
     }
     close(sock);

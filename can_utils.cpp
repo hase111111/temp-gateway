@@ -10,6 +10,7 @@
 static int can_sock = -1;
 
 constexpr uint16_t CMD_SET_AXIS_REQUESTED_STATE = 0x007;
+constexpr uint32_t AXIS_STATE_IDLE = 1;
 constexpr uint16_t CMD_GET_ENCODER_ESTIMATES = 0x009;
 constexpr uint16_t CMD_SET_INPUT_POS = 0x00C;
 constexpr uint16_t CMD_SET_ABSOLUTE_POSITION = 0x019;
@@ -78,4 +79,8 @@ bool get_position_only(int& node_id, float& pos) {
     std::memcpy(&pos, f.data, 4);  // data[0..3] だけ
 
     return true;
+}
+
+void stop_odrive(int node_id) {
+    send_axis_state(node_id, AXIS_STATE_IDLE);
 }
