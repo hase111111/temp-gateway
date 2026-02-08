@@ -1,13 +1,14 @@
 #include "ctrl_manager.h"
-#include "can_utils.h"
-
-#include <thread>
-#include <atomic>
-#include <cstring>
-#include <chrono>
-#include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
 #include <unistd.h>
+
+#include <atomic>
+#include <chrono>
+#include <cstring>
+#include <thread>
+
+#include "can_utils.h"
 
 constexpr int CTRL_PORT = 60000;
 

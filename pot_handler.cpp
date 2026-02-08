@@ -1,19 +1,17 @@
 #include "pot_handler.h"
-
-#include <thread>
-#include <vector>
-#include <cstring>
-#include <iostream>
-#include <chrono>
-
-#include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
 #include <unistd.h>
-
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #include <net/if.h>
-#include <sys/ioctl.h>
+
+#include <chrono>
+#include <cstring>
+#include <iostream>
+#include <thread>
+#include <vector>
 
 // ===== UDP =====
 constexpr int POT_RX_PORT = 50010;

@@ -1,10 +1,11 @@
 #include "can_utils.h"
-#include <cstring>
+#include <sys/ioctl.h>
 #include <unistd.h>
+#include <net/if.h>
 #include <linux/can.h>
 #include <linux/can/raw.h>
-#include <net/if.h>
-#include <sys/ioctl.h>
+
+#include <cstring>
 
 static int can_sock = -1;
 

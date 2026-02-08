@@ -3,9 +3,9 @@
 
 #include "can_utils.h"
 #include "ctrl_manager.h"
-#include "udj1_handler.h"
 #include "logger.h"
 #include "pot_handler.h"
+#include "udj1_handler.h"
 
 int main() {
     std::cout << "[GW] start" << std::endl;

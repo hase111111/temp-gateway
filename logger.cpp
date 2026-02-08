@@ -1,19 +1,19 @@
 #include "logger.h"
-#include "thread_priority.h"
-
-#include <queue>
-#include <vector>
-#include <mutex>
-#include <thread>
-#include <atomic>
-#include <fstream>
-#include <chrono>
-#include <cstring>
-#include <ctime>
-#include <iomanip>
-#include <array>
 #include <sys/stat.h>
+#include <array>
+#include <atomic>
+#include <chrono>
+#include <ctime>
+#include <cstring>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <mutex>
+#include <queue>
+#include <thread>
+#include <vector>
+
+#include "thread_priority.h"
 
 constexpr int JOINT_NUM = 16;
 constexpr double FLUSH_INTERVAL = 0.3;
