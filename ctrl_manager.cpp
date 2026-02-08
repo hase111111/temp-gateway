@@ -37,7 +37,7 @@ static void calibrate_zero_position() {
     std::array<bool, 16> calibrated{};
     std::array<double, 16> last_send_pos{0.0};
 
-    // ☆ここの値の正負を変更すると，キャリブレーション時の回転方向が変わる．
+    // ☆ ここの値の正負を変更すると，キャリブレーション時の回転方向が変わる．
     const std::array<float, 16> vec_pm{-1.0f, -1.0f, 1.0f,
                                  -1.0f, -1.0f, -1.0f,
                                  -1.0f, -1.0f, 1.0f,
@@ -45,7 +45,7 @@ static void calibrate_zero_position() {
                                  -1.0f, -1.0f,
                                  -1.0f, -1.0f};
 
-    // ☆関節ごとの許容誤差値（ポテンショメータ値の差分）．
+    // ☆ 関節ごとの許容誤差値（ポテンショメータ値の差分）．
     const std::array<float, 16> clam_val{
         50.0f,50.0f,200.0f,
         50.0f,50.0f,200.0f,
@@ -53,13 +53,13 @@ static void calibrate_zero_position() {
         50.0f,50.0f,200.0f,
        100.0f,100.0f,
        100.0f,100.0f};
-       
-    constexpr int kCalibGroupSize = 3;
-    constexpr int kCalibEndIndex = 12; // 12..15 are skipped
+
+    constexpr int kCalibGroupSize = 3;  // 3関節ずつキャリブレーションを行う.
+    constexpr int kCalibEndIndex = 12;  // 12 ~ 15 はキャリブレーション不要（胴体関節）
     int current_group = 0;
     int last_logged_group = -1;
 
-    // 最初はすべて未キャリブレーション状態にする.
+    // 初期化：キャリブレーション不要な関節は最初から完了にする.
     for (int i = 0; i < 16; ++i) {
         calibrated[i] = (i >= kCalibEndIndex);
     }
@@ -89,6 +89,8 @@ static void calibrate_zero_position() {
         }
 
         for (int i = 0; i < 16; ++i) {
+            // 基本的にプログラム上ではモータの index は 0 始まりなので注意．
+            // CAN に送る段階で +1 する．
             if (calibrated[i]) {
                 continue;
             }
@@ -106,7 +108,7 @@ static void calibrate_zero_position() {
                     << "target=" << target << " (" << target_rot << " rot)"
                     << std::endl;
             
-            // ポテンショメータ値を目標値に合わせるようにODriveに送信する.
+            // ポテンショメータ値を目標値に合わせるように ODrive に送信する.
             const float rot_diff = 0.1f;  // 一回に送る回転量の差分(回転速度)
             if (std::abs(target - now) > clam_val[i]) {
                 last_send_pos[i] += ((now < target) ? rot_diff : -rot_diff) * vec_pm[i];
