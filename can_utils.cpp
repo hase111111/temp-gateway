@@ -11,6 +11,7 @@ static int can_sock = -1;
 
 constexpr uint16_t CMD_SET_INPUT_POS = 0x00C;
 constexpr uint16_t CMD_SET_AXIS_REQUESTED_STATE = 0x007;
+constexpr uint16_t CMD_SET_ABSOLUTE_POSITION = 0x019;
 
 void can_init(const char* ifname) {
     can_sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
@@ -32,7 +33,7 @@ void can_close() {
     }
 }
 
-void send_axis_state(int node_id, uint32_t state) {
+void send_axis_state(const int node_id, const uint32_t state) {
     can_frame f{};
     f.can_id  = (node_id << 5) | CMD_SET_AXIS_REQUESTED_STATE;
     f.can_dlc = 4;
@@ -40,7 +41,7 @@ void send_axis_state(int node_id, uint32_t state) {
     write(can_sock, &f, sizeof(f));
 }
 
-void send_position(int node_id, float pos) {
+void send_position(const int node_id, const float pos) {
     can_frame f{};
     f.can_id  = (node_id << 5) | CMD_SET_INPUT_POS;
     f.can_dlc = 4;
@@ -48,10 +49,18 @@ void send_position(int node_id, float pos) {
     write(can_sock, &f, sizeof(f));
 }
 
-void send_can_raw(uint32_t can_id, const uint8_t* data, uint8_t dlc) {
+void send_can_raw(const uint32_t can_id, const uint8_t* data, const  uint8_t dlc) {
     struct can_frame f{};
     f.can_id  = can_id;
     f.can_dlc = dlc;
     std::memcpy(f.data, data, dlc);
+    write(can_sock, &f, sizeof(f));
+}
+
+void send_set_absolute_position(const int node_id, const float pos) {
+    can_frame f{};
+    f.can_id  = (node_id << 5) | CMD_SET_ABSOLUTE_POSITION;
+    f.can_dlc = 4;
+    std::memcpy(f.data, &pos, 4);
     write(can_sock, &f, sizeof(f));
 }

@@ -8,6 +8,7 @@
 #include <string>
 
 #include "thread_safe_store.h"
+#include "global_variable.h"
 
 namespace {
 

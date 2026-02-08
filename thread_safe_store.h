@@ -112,5 +112,3 @@ private:
     mutable std::shared_mutex mutex_;
     std::unordered_map<std::string, std::any> data_;
 };
-
-inline ThreadSafeStore g_thread_safe_store;

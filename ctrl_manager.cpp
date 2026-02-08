@@ -11,7 +11,8 @@
 #include <thread>
 
 #include "can_utils.h"
-#include "thread_safe_store.h"
+#include "global_variable.h"
+
 
 constexpr int CTRL_PORT = 60000;
 

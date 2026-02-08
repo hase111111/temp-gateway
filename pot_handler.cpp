@@ -16,7 +16,7 @@
 #include <array>
 #include <vector>
 
-#include "thread_safe_store.h"
+#include "global_variable.h"
 
 // ===== UDP =====
 constexpr int POT_RX_PORT = 50010;

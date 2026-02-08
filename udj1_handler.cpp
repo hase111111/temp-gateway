@@ -15,7 +15,7 @@
 #include "system_state.h"
 #include "logger.h"
 #include "thread_priority.h"
-#include "thread_safe_store.h"
+#include "global_variable.h"
 
 static double now_time() {
     using clock = std::chrono::steady_clock;

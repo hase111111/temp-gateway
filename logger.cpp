@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "thread_priority.h"
-#include "thread_safe_store.h"
+#include "global_variable.h"
 
 constexpr int JOINT_NUM = 16;
 constexpr double FLUSH_INTERVAL = 0.3;

@@ -7,7 +7,7 @@
 #include "udj1_handler.h"
 #include "thread_safe_store.h"
 #include "stdin_writer.h"
-#include "system_state.h"
+#include "global_variable.h"
 
 int main() {
     std::cout << "[GW] Gateway Start. / ゲートウエイマイコンを起動します." << std::endl;
