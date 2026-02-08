@@ -77,12 +77,12 @@ static void calibrate_zero_position() {
                     << std::endl;
             
             // ポテンショメータ値を目標値に合わせるようにODriveに送信する.
-            const float rot_diff = 0.1f;
+            const float rot_diff = 1.0f;
             if (std::abs(target - now) > 10) {
                 const auto send_pos = (now < target) ?
                     current_rot + rot_diff :
                     current_rot - rot_diff;
-                send_position(NODE_ID[i], send_pos);
+                send_position(NODE_ID[i] + 1, send_pos);
                 std::cout << "[CTRL]   -> sending " << send_pos << " rot to ODrive." << std::endl;
             } else {
                 calibrated[i] = true;
@@ -95,7 +95,7 @@ static void calibrate_zero_position() {
     
     // ODriveに絶対位置として送信する.
     for (int i = 0; i < 16; ++i) {
-        send_set_absolute_position(NODE_ID[i], 0.0f);
+        send_set_absolute_position(NODE_ID[i] + 1, 0.0f);
     }
 
     std::cout << "[CTRL] Potentiometer zero calibration done. / ポテンショメータゼロ点キャリブレーションを完了しました." << std::endl;
