@@ -4,6 +4,9 @@
 // 他のヘッダファイルからインクルードされることを想定している．
 // あまり褒められた設計ではないが，手早く実装するために便宜上こうしている．
 
+#include <array>
+#include <cstdint>
+
 #include "thread_safe_store.h"
 #include "thread_safe_vector.h"
 
