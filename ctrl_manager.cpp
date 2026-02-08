@@ -66,27 +66,25 @@ static void calibrate_zero_position() {
             float current_rot{};
             get_position_only(i, current_rot);
 
-            if (i == 2) {
-                std::cout << "[CTRL] Joint " << i
-                        << ": pot=" << now << " (" << now_rot << " rot), "
-                        << "odrive=" << current_rot << " rot, "
-                        << "target=" << target << " (" << target_rot << " rot)"
-                        << std::endl;
-                
-                // ポテンショメータ値を目標値に合わせるようにODriveに送信する.
-                const float rot_diff = 0.01f;
-                if (std::abs(target - now) > 10) {
-                    send_position(NODE_ID[i], 
-                        target > now ? 
-                            current_rot + rot_diff : current_rot - rot_diff);
-                } else {
-                    calibrated[i] = true;
-                }
+            std::cout << "[CTRL] Joint " << i
+                    << ": pot=" << now << " (" << now_rot << " rot), "
+                    << "odrive=" << current_rot << " rot, "
+                    << "target=" << target << " (" << target_rot << " rot)"
+                    << std::endl;
+            
+            // ポテンショメータ値を目標値に合わせるようにODriveに送信する.
+            const float rot_diff = 0.01f;
+            if (std::abs(target - now) > 10) {
+                send_position(NODE_ID[i], 
+                    target > now ? 
+                        current_rot + rot_diff : current_rot - rot_diff);
+            } else {
+                calibrated[i] = true;
             }
         }
 
         // 少し待つ.
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     
     // ODriveに絶対位置として送信する.
