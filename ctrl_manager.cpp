@@ -71,6 +71,7 @@ static void ctrl_loop() {
 
         const SystemState state = g_thread_safe_store.Get<SystemState>("system_state");
         if (cmd == 1 && state == SystemState::INIT) {
+            std::cout << "[CTRL] Start calibration command received. / キャリブレーション開始コマンドを受信しました." << std::endl;
             for (const auto& id : NODE_ID) {
                 send_axis_state(id, AXIS_STATE_FULL_CALIBRATION_SEQUENCE);
             }
