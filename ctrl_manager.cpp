@@ -94,7 +94,9 @@ static void calibrate_zero_position() {
     }
     
     // ODriveに絶対位置として送信する.
-    // send_set_absolute_position(NODE_ID[i], angle_rad);
+    for (int i = 0; i < 16; ++i) {
+        send_set_absolute_position(NODE_ID[i], 0.0f);
+    }
 
     std::cout << "[CTRL] Potentiometer zero calibration done. / ポテンショメータゼロ点キャリブレーションを完了しました." << std::endl;
 }
