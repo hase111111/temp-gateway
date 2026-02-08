@@ -43,27 +43,23 @@ static void calibrate_zero_position() {
                                  -1.0f, -1.0f,
                                  -1.0f, -1.0f};
     const std::array<float, 16> clam_val{
-        100.0f,100.0f,200.0f,
-        100.0f,100.0f,200.0f,
-        100.0f,100.0f,200.0f,
-        100.0f,100.0f,200.0f,
+        50.0f,50.0f,200.0f,
+        50.0f,50.0f,200.0f,
+        50.0f,50.0f,200.0f,
+        50.0f,50.0f,200.0f,
        100.0f,100.0f,
        100.0f,100.0f};
+    constexpr int kCalibGroupSize = 3;
+    constexpr int kCalibEndIndex = 12; // 12..15 are skipped
+    int current_group = 0;
+    int last_logged_group = -1;
 
     // 最初はすべて未キャリブレーション状態にする.
-    for (auto& v : calibrated) {
-        v = false;
+    for (int i = 0; i < 16; ++i) {
+        calibrated[i] = (i >= kCalibEndIndex);
     }
 
-    int time_out_count = 0;
-    while(true) {
-        // 20秒で落とす.
-        if (time_out_count++ > 200) {
-            std::cout << "[CTRL] Potentiometer zero calibration timeout. /"
-                " ポテンショメータゼロ点キャリブレーションがタイムアウトしました．" << std::endl;
-            break;
-        }
-        
+    while(true) {        
         bool all_done = true;
         for (const auto v : calibrated) {
             if (!v) {
@@ -78,14 +74,20 @@ static void calibrate_zero_position() {
 
         const auto pot_values = g_pot_values.Back();
 
+        const int group_start = current_group * kCalibGroupSize;
+        const int group_end = group_start + kCalibGroupSize;
+        if (current_group != last_logged_group && group_start < kCalibEndIndex) {
+            std::cout << "[CTRL] Calib group " << current_group
+                      << " (" << group_start << ".." << (group_end - 1) << ")"
+                      << " start" << std::endl;
+            last_logged_group = current_group;
+        }
+
         for (int i = 0; i < 16; ++i) {
             if (calibrated[i]) {
                 continue;
             }
-
-            // Debug 用.
-            if (i == 3 || i == 4 || i == 5) {                
-            } else {
+            if (i < kCalibEndIndex && (i < group_start || i >= group_end)) {
                 continue;
             }
 
@@ -110,6 +112,20 @@ static void calibrate_zero_position() {
             }
 
         }
+
+        bool group_done = true;
+        for (int i = group_start; i < group_end && i < kCalibEndIndex; ++i) {
+            if (!calibrated[i]) {
+                group_done = false;
+                break;
+            }
+        }
+        if (group_done && group_start < kCalibEndIndex) {
+            std::cout << "[CTRL] Calib group " << current_group
+                      << " (" << group_start << ".." << (group_end - 1) << ")"
+                      << " done" << std::endl;
+            ++current_group;
+        }
         
         std::cout << std::endl << std::endl;
 
@@ -121,6 +137,9 @@ static void calibrate_zero_position() {
     for (int i = 0; i < 16; ++i) {
         send_set_absolute_position(i + 1, 0.0f);
     }
+
+    // 少し待つ.
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     std::cout << "[CTRL] Potentiometer zero calibration done. /"
         " ポテンショメータゼロ点キャリブレーションを完了しました." << std::endl;

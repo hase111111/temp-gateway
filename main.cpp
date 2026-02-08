@@ -17,7 +17,6 @@ int main() {
     can_init("can0");
 
     g_thread_safe_store.Set<bool>("fin", false);  // このフラグを折ると各スレッドが終了する.
-    g_thread_safe_store.Set<bool>("cal_end", false);  // キャリブレーション完了フラグ.
     g_thread_safe_store.Set<int>("pot", 0);  // 送った秒数分ポテンショメータ値を表示する．
     g_thread_safe_store.Set<int>("cmd", 0);  // 
     g_thread_safe_store.Set<SystemState>("system_state", SystemState::INIT);  // システム状態.
