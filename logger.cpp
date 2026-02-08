@@ -110,6 +110,7 @@ void logger_push(double time, const float* joint) {
     std::memcpy(r.joint, joint, sizeof(float) * JOINT_NUM);
 
     std::lock_guard<std::mutex> lk(log_mutex);
-    if (log_queue.size() < 5000)
+    if (log_queue.size() < 5000) {
         log_queue.push(r);
+    }
 }

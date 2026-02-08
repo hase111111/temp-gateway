@@ -27,7 +27,9 @@ void can_init(const char* ifname) {
 }
 
 void can_close() {
-    if (can_sock >= 0) close(can_sock);
+    if (can_sock >= 0) { 
+        close(can_sock);
+    }
 }
 
 void send_axis_state(int node_id, uint32_t state) {

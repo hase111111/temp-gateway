@@ -2,6 +2,9 @@
 #include <cstdint>
 
 void can_init(const char* ifname);
+
+// CAN 通信を終了する．
+// これを呼んだのち，直ちにプログラムを終了すること．
 void can_close();
 
 void send_axis_state(int node_id, uint32_t state);

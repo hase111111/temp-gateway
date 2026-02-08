@@ -13,6 +13,8 @@
 #include <thread>
 #include <vector>
 
+#include "thread_safe_store.h"
+
 // ===== UDP =====
 constexpr int POT_RX_PORT = 50010;
 constexpr int POT_TX_PORT = 50011;
@@ -27,10 +29,12 @@ constexpr int      ADC_PER_PICO    = 3;
 static constexpr char POTQ_MAGIC[4] = {'P','O','T','Q'};
 static constexpr char POTR_MAGIC[4] = {'P','O','T','R'};
 
+// ===== Internal Variables =====
+static std::thread pot_thread{};
+
 // ======================================================
 
-static int open_can_socket(const char* ifname)
-{
+static int open_can_socket(const char* ifname) {
     int s = socket(PF_CAN, SOCK_RAW, CAN_RAW);
 
     ifreq ifr{};
@@ -47,13 +51,12 @@ static int open_can_socket(const char* ifname)
 
 // ======================================================
 
-static void pot_loop()
-{
+static void pot_loop() {
     // ----- CAN socket -----
-    int can_sock = open_can_socket("can0");
+    const int can_sock = open_can_socket("can0");
 
     // ----- UDP socket -----
-    int udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
+    const int udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
 
     sockaddr_in rx_addr{};
     rx_addr.sin_family      = AF_INET;
@@ -65,14 +68,14 @@ static void pot_loop()
 
     uint8_t buf[1500];
 
-    while (true) {
+    while (!g_thread_safe_store.Get<bool>("shutdown") ) {
         sockaddr_in src{};
         socklen_t slen = sizeof(src);
 
         ssize_t len = recvfrom(udp_sock, buf, sizeof(buf), 0,
                                (sockaddr*)&src, &slen);
-        if (len < 6) continue;
-        if (std::memcmp(buf, POTQ_MAGIC, 4) != 0) continue;
+        if (len < 6) { continue; }
+        if (std::memcmp(buf, POTQ_MAGIC, 4) != 0) { continue; }
 
         uint8_t group_id = buf[4];
         uint8_t req_id   = buf[5];
@@ -97,19 +100,20 @@ static void pot_loop()
         while (std::chrono::steady_clock::now() < deadline) {
             can_frame rx{};
             ssize_t r = read(can_sock, &rx, sizeof(rx));
-            if (r <= 0) continue;
+            if (r <= 0) { continue; }
 
             if (rx.can_id < CAN_RESP_BASE ||
-                rx.can_id >= CAN_RESP_BASE + NUM_PICO)
+                rx.can_id >= CAN_RESP_BASE + NUM_PICO) {
                 continue;
+            }
 
-            int pico = rx.can_id - CAN_RESP_BASE; // 0..5
+            const int pico = rx.can_id - CAN_RESP_BASE; // 0..5
 
             for (int i = 0; i + 1 < rx.can_dlc; i += 2) {
                 uint16_t adc =
                     rx.data[i] | (rx.data[i+1] << 8);
 
-                uint8_t ch = pico * ADC_PER_PICO + (i / 2);
+                const uint8_t ch = pico * ADC_PER_PICO + (i / 2);
                 samples.push_back({ch, adc});
             }
         }
@@ -124,7 +128,7 @@ static void pot_loop()
         pkt[6] = samples.size();
 
         size_t off = 7;
-        for (auto& s : samples) {
+        for (const auto& s : samples) {
             pkt[off++] = s.ch;
             pkt[off++] = s.adc & 0xFF;
             pkt[off++] = (s.adc >> 8) & 0xFF;
@@ -147,5 +151,6 @@ static void pot_loop()
 
 void start_pot_thread()
 {
-    std::thread(pot_loop).detach();
+    // ポテンショメータの読み取りスレッドを起動.
+    pot_thread = std::thread(pot_loop);
 }
