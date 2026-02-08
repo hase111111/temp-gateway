@@ -22,7 +22,6 @@ constexpr int POT_RX_PORT = 50010;
 constexpr int POT_TX_PORT = 50011;
 
 // ===== CAN =====
-constexpr uint32_t CAN_REQ_ID      = 0x123;   // broadcast
 constexpr uint32_t CAN_RESP_BASE   = 0x301;   // 0x301 - 0x306
 constexpr int      NUM_PICO        = 6;
 constexpr int      ADC_PER_PICO    = 3;
@@ -72,6 +71,13 @@ static void pot_loop() {
         return;
     }
 
+    int flags = fcntl(can_sock, F_GETFL, 0);
+    if (flags < 0 || fcntl(can_sock, F_SETFL, flags | O_NONBLOCK) < 0) {
+        std::cerr << "[POT] fcntl(CAN O_NONBLOCK) failed" << std::endl;
+        close(can_sock);
+        return;
+    }
+
     // ----- UDP socket -----
     const int udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (udp_sock < 0) {
@@ -91,8 +97,8 @@ static void pot_loop() {
         return;
     }
 
-    int flags = fcntl(udp_sock, F_GETFL, 0);
-    if (flags < 0 || fcntl(udp_sock, F_SETFL, flags | O_NONBLOCK) < 0) {
+    int flags_ = fcntl(udp_sock, F_GETFL, 0);
+    if (flags_ < 0 || fcntl(udp_sock, F_SETFL, flags_ | O_NONBLOCK) < 0) {
         std::cerr << "[POT] fcntl(O_NONBLOCK) failed" << std::endl;
         close(udp_sock);
         close(can_sock);
@@ -123,13 +129,6 @@ static void pot_loop() {
         uint8_t group_id = buf[4];
         uint8_t req_id   = buf[5];
 
-        // ===== CAN request (broadcast) =====
-        can_frame req{};
-        req.can_id  = CAN_REQ_ID;
-        req.can_dlc = 1;
-        req.data[0] = req_id;
-        write(can_sock, &req, sizeof(req));
-
         // ===== collect responses =====
         struct Sample {
             uint8_t ch;
@@ -143,7 +142,15 @@ static void pot_loop() {
         while (std::chrono::steady_clock::now() < deadline) {
             can_frame rx{};
             ssize_t r = read(can_sock, &rx, sizeof(rx));
-            if (r <= 0) { continue; }
+            if (r < 0) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    continue;
+                }
+                std::cerr << "[POT] read(CAN) failed" << std::endl;
+                break;
+            }
+            if (r == 0) { continue; }
 
             if (rx.can_id < CAN_RESP_BASE ||
                 rx.can_id >= CAN_RESP_BASE + NUM_PICO) {
