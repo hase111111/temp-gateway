@@ -35,15 +35,10 @@ static void calibrate_zero_position() {
 
     // 各関節に対して，ポテンショメータ値を送信する.
     std::array<bool, 16> calibrated{};
-    std::array<float, 16> last_send_pos{};
-    std::array<float, 16> last_delta{};
-    std::array<bool, 16> has_last{};
+    std::array<double, 16> last_send_pos{0.0};
 
     // 最初はすべて未キャリブレーション状態にする.
     for (auto& v : calibrated) {
-        v = false;
-    }
-    for (auto& v : has_last) {
         v = false;
     }
 
@@ -79,33 +74,17 @@ static void calibrate_zero_position() {
             const float now_rot = static_cast<float>(now) / 4095.0f + 1.5f;
             const int target = POT_DEFAULT_ANGLES[i];
             const float target_rot = static_cast<float>(target) / 4095.0f + 1.5f;
-            float current_rot{};
-            const bool has_pos = get_position_only(i, current_rot);
 
             std::cout << "[CTRL] Joint " << i
                     << ": pot=" << now << " (" << now_rot << " rot), "
-                    << "odrive=" << current_rot << " rot, "
                     << "target=" << target << " (" << target_rot << " rot)"
                     << std::endl;
             
             // ポテンショメータ値を目標値に合わせるようにODriveに送信する.
             const float rot_diff = 0.1f;
             if (std::abs(target - now) > 10) {
-                float send_pos = 0.0f;
-                if (has_pos) {
-                    send_pos = (now < target) ?
-                        current_rot + rot_diff :
-                        current_rot - rot_diff;
-                    last_delta[i] = send_pos - current_rot;
-                    last_send_pos[i] = send_pos;
-                    has_last[i] = true;
-                } else if (has_last[i]) {
-                    send_pos = last_send_pos[i] + last_delta[i];
-                    last_send_pos[i] = send_pos;
-                } else {
-                    continue;
-                }
-
+                last_send_pos[i] += (now < target) ? rot_diff : -rot_diff;
+                const float send_pos = last_send_pos[i];
                 send_position(i + 1, send_pos);
                 std::cout << "[CTRL]   -> sending " << send_pos << " rot to ODrive." << std::endl;
             } else {
