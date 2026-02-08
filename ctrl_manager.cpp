@@ -36,10 +36,12 @@ static void calibrate_zero_position() {
     // 各関節に対して，ポテンショメータ値を送信する.
     std::array<bool, 16> calibrated{};
     std::array<double, 16> last_send_pos{0.0};
-    std::array<float, 16> vec_pm{-1.0f, -1.0f, 1.0f, -1.0f,
-                                 -1.0f, -1.0f, -1.0f, -1.0f,
-                                 -1.0f, -1.0f, -1.0f, -1.0f,
-                                 -1.0f, -1.0f, -1.0f, -1.0f};
+    std::array<float, 16> vec_pm{-1.0f, -1.0f, 1.0f,
+                                 -1.0f, -1.0f, -1.0f,
+                                 -1.0f, -1.0f, -1.0f,
+                                 -1.0f, -1.0f, -1.0f,
+                                 -1.0f, -1.0f,
+                                 -1.0f, -1.0f};
 
     // 最初はすべて未キャリブレーション状態にする.
     for (auto& v : calibrated) {
