@@ -54,3 +54,4 @@ compile_commands.json
 
 # Data logs
 data_logs/
+logs/
