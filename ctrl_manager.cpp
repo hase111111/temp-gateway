@@ -37,23 +37,57 @@ static void calibrate_zero_position() {
     const auto pot_values = g_pot_values.Back();
     
     // 各関節に対して，ポテンショメータ値を送信する.
-    for (int i = 0; i < 16; ++i) {
-        // debug用
-        const int now = pot_values[i / 3][i % 3];
-        const float now_rot = static_cast<float>(now) / 4095.0f + 1.5f;
-        const int target = POT_DEFAULT_ANGLES[i];
-        const float target_rot = static_cast<float>(target) / 4095.0f + 1.5f;
-        float current_rot{};
-        get_position_only(i, current_rot);
-        std::cout << "[CTRL] Joint " << i
-                  << ": pot=" << now << " (" << now_rot << " rot), "
-                  << "odrive=" << current_rot << " rot, "
-                  << "target=" << target << " (" << target_rot << " rot)"
-                  << std::endl;
+    std::array<bool, 16> calibrated{};
 
-        // ODriveに絶対位置として送信する.
-        // send_set_absolute_position(NODE_ID[i], angle_rad);
+    // 最初はすべて未キャリブレーション状態にする.
+    for (auto& v : calibrated) {
+        v = false;
     }
+
+    while(true) {
+        bool all_done = true;
+        for (const auto v : calibrated) {
+            if (!v) {
+                all_done = false;
+                break;
+            }
+        }
+        
+        if (all_done) {
+            break;
+        }
+
+        for (int i = 0; i < 16; ++i) {
+            // debug用
+            const int now = pot_values[i / 3][i % 3];
+            const float now_rot = static_cast<float>(now) / 4095.0f + 1.5f;
+            const int target = POT_DEFAULT_ANGLES[i];
+            const float target_rot = static_cast<float>(target) / 4095.0f + 1.5f;
+            float current_rot{};
+            get_position_only(i, current_rot);
+
+            if (i == 2) {
+                std::cout << "[CTRL] Joint " << i
+                        << ": pot=" << now << " (" << now_rot << " rot), "
+                        << "odrive=" << current_rot << " rot, "
+                        << "target=" << target << " (" << target_rot << " rot)"
+                        << std::endl;
+                
+                // ポテンショメータ値を目標値に合わせるようにODriveに送信する.
+                const float rot_diff = 0.01f;
+                if (std::abs(target - now) > 10) {
+                    send_position(NODE_ID[i], 
+                        target > now ? 
+                            current_rot + rot_diff : current_rot - rot_diff);
+                } else {
+                    calibrated[i] = true;
+                }
+            }
+        }
+    }
+    
+    // ODriveに絶対位置として送信する.
+    // send_set_absolute_position(NODE_ID[i], angle_rad);
 
     std::cout << "[CTRL] Potentiometer zero calibration done. / ポテンショメータゼロ点キャリブレーションを完了しました." << std::endl;
 }
