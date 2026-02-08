@@ -173,13 +173,14 @@ static void pot_loop() {
                               << "=" << adc;
                 }
             }
-            if (should_print) {
-                std::cout << std::endl << std::endl;
-            }
+
+            if (should_print) { std::cout << std::endl; }
 
             // グローバル変数にも保存しておく．
             g_pot_values.PushBack(latest);
         }
+
+        if (std::chrono::steady_clock::now() < disp_until) { std::cout << std::endl; }
 
         if (!has_request) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
