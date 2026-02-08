@@ -67,10 +67,13 @@ bool TryParseDouble(const std::string& s, double& out) {
 void StdinWriter::Run() {
     std::string line;
     while (!g_thread_safe_store.Get<bool>("fin")) {
+        // 入力を促す．
+        // std::cout << "[StdinWriter] > " << std::flush;
+
         if (!std::getline(std::cin, line)) {
             break;
         }
-        std::cout << g_thread_safe_store.Get<bool>("fin") << std::endl;
+
         const auto eq = line.find('=');
         if (eq == std::string::npos) {
             continue;
@@ -86,7 +89,7 @@ void StdinWriter::Run() {
         if (type == ThreadSafeStore::ValueType::kBool) {
             bool parsed = false;
             if (TryParseBool(val, parsed)) {
-                std::cout << "[StdinWriter] Set " << key
+                std::cout << "[StdinWriter] Set Bool " << key
                           << " = " << (parsed ? "true" : "false") << std::endl;
                 g_thread_safe_store.Set<bool>(key, parsed);
             }
@@ -94,16 +97,22 @@ void StdinWriter::Run() {
         } else if (type == ThreadSafeStore::ValueType::kInt) {
             int parsed = 0;
             if (TryParseInt(val, parsed)) {
+                std::cout << "[StdinWriter] Set Int " << key
+                          << " = " << parsed << std::endl;
                 g_thread_safe_store.Set<int>(key, parsed);
             }
             continue;
         } else if (type == ThreadSafeStore::ValueType::kDouble) {
             double parsed = 0.0;
             if (TryParseDouble(val, parsed)) {
+                std::cout << "[StdinWriter] Set Double " << key
+                          << " = " << parsed << std::endl;
                 g_thread_safe_store.Set<double>(key, parsed);
             }
             continue;
         } else if (type == ThreadSafeStore::ValueType::kString) {
+            std::cout << "[StdinWriter] Set String " << key
+                      << " = " << val << std::endl;
             g_thread_safe_store.Set<std::string>(key, val);
             continue;
         }
