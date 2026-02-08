@@ -58,6 +58,10 @@ static void calibrate_zero_position() {
         }
 
         for (int i = 0; i < 16; ++i) {
+            if (calibrated[i] || i != 2) {
+                continue;
+            }
+
             // debug用
             const int now = pot_values[i / 3][i % 3];
             const float now_rot = static_cast<float>(now) / 4095.0f + 1.5f;
@@ -73,7 +77,7 @@ static void calibrate_zero_position() {
                     << std::endl;
             
             // ポテンショメータ値を目標値に合わせるようにODriveに送信する.
-            const float rot_diff = 0.01f;
+            const float rot_diff = 0.1f;
             if (std::abs(target - now) > 10) {
                 send_position(NODE_ID[i], 
                     target > now ? 
