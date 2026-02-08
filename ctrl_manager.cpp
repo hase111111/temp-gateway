@@ -40,13 +40,15 @@ static void calibrate_zero_position() {
     for (int i = 0; i < 16; ++i) {
         // debug用
         const int now = pot_values[i / 3][i % 3];
+        const float now_rot = static_cast<float>(now) / 4095.0f + 1.5f;
         const int target = POT_DEFAULT_ANGLES[i];
-        float rot{};
-        get_position_only(i, rot);
+        const float target_rot = static_cast<float>(target) / 4095.0f + 1.5f;
+        float current_rot{};
+        get_position_only(i, current_rot);
         std::cout << "[CTRL] Joint " << i
-                  << ": pot=" << now
-                  << ", target=" << target
-                  << ", odrive_pos=" << rot
+                  << ": pot=" << now << " (" << now_rot << " rot), "
+                  << "odrive=" << current_rot << " rot, "
+                  << "target=" << target << " (" << target_rot << " rot)"
                   << std::endl;
 
         // ODriveに絶対位置として送信する.
