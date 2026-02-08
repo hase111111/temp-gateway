@@ -78,8 +78,8 @@ static void udj1_loop() {
             std::cerr << "[UDJ1] recvfrom() failed" << std::endl;
             break;
         }
-        if (len < 8 + EXPECTED_COUNT * 4) continue;
-        if (std::memcmp(buf, "UDJ1", 4) != 0) continue;
+        if (len < 8 + EXPECTED_COUNT * 4) { continue; }
+        if (std::memcmp(buf, "UDJ1", 4) != 0) { continue; }
 
         float* angles = reinterpret_cast<float*>(buf + 8);
 		const double t = now_time();

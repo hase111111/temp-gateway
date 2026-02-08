@@ -39,7 +39,7 @@ static void calibrate_zero_position() {
     std::array<float, 16> vec_pm{-1.0f, -1.0f, 1.0f,
                                  -1.0f, -1.0f, -1.0f,
                                  -1.0f, -1.0f, -1.0f,
-                                 -1.0f, -1.0f, -1.0f,
+                                 1.0f, 1.0f, -1.0f,
                                  -1.0f, -1.0f,
                                  -1.0f, -1.0f};
 
@@ -48,11 +48,12 @@ static void calibrate_zero_position() {
         v = false;
     }
 
-    int c = 0;
+    int time_out_count = 0;
     while(true) {
-        // 20秒で落とす
-        if (c++ > 200) {
-            std::cout << "[CTRL] Potentiometer zero calibration timeout. / ポテンショメータゼロ点キャリブレーションがタイムアウトしました．" << std::endl;
+        // 20秒で落とす.
+        if (time_out_count++ > 200) {
+            std::cout << "[CTRL] Potentiometer zero calibration timeout. /"
+                " ポテンショメータゼロ点キャリブレーションがタイムアウトしました．" << std::endl;
             break;
         }
         
@@ -75,8 +76,8 @@ static void calibrate_zero_position() {
                 continue;
             }
 
-            // debug用
-            if (i == 11 || i == 10 || i == 9) {                
+            // Debug 用.
+            if (i == 9 || i == 10 || i == 11) {                
             } else {
                 continue;
             }
@@ -92,12 +93,11 @@ static void calibrate_zero_position() {
                     << std::endl;
             
             // ポテンショメータ値を目標値に合わせるようにODriveに送信する.
-            const float rot_diff = 0.1f;
+            const float rot_diff = 0.2f;  // 一回に送る回転量の差分(回転速度)
             if (std::abs(target - now) > 50) {
                 last_send_pos[i] += ((now < target) ? rot_diff : -rot_diff) * vec_pm[i];
                 const float send_pos = last_send_pos[i];
                 send_position(i + 1, send_pos);
-                std::cout << "[CTRL]   -> sending " << send_pos << " rot to ODrive." << std::endl;
             } else {
                 calibrated[i] = true;
             }
@@ -112,7 +112,8 @@ static void calibrate_zero_position() {
         send_set_absolute_position(i + 1, 0.0f);
     }
 
-    std::cout << "[CTRL] Potentiometer zero calibration done. / ポテンショメータゼロ点キャリブレーションを完了しました." << std::endl;
+    std::cout << "[CTRL] Potentiometer zero calibration done. /"
+        " ポテンショメータゼロ点キャリブレーションを完了しました." << std::endl;
 }
 
 static void ctrl_loop() {
