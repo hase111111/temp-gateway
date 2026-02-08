@@ -4,6 +4,8 @@
 
 #include <chrono>
 #include <cstring>
+#include <cerrno>
+#include <iostream>
 #include <thread>
 
 #include "udj1_handler.h"
@@ -30,15 +32,32 @@ static const int NODE_ID[EXPECTED_COUNT] = {
     13, 14, 15, 16
 };
 
-void udj1_loop() {
+static std::thread udj1_thread;
+
+static void udj1_loop() {
 	set_fifo_priority(80);
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock < 0) {
+        std::cerr << "[UDJ1] socket() failed" << std::endl;
+        return;
+    }
 
     sockaddr_in addr{};
     addr.sin_family      = AF_INET;
     addr.sin_port        = htons(UDP_UDJ1_PORT);
     addr.sin_addr.s_addr = INADDR_ANY;
-    [[maybe_unused]] auto _ = bind(sock, (sockaddr*)&addr, sizeof(addr));
+    if (bind(sock, (sockaddr*)&addr, sizeof(addr)) < 0) {
+        std::cerr << "[UDJ1] bind() failed" << std::endl;
+        close(sock);
+        return;
+    }
+
+    timeval tv{};
+    tv.tv_sec = 0;
+    tv.tv_usec = 200000;
+    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+        std::cerr << "[UDJ1] setsockopt(SO_RCVTIMEO) failed" << std::endl;
+    }
 
     uint8_t buf[1024];
 
@@ -49,6 +68,13 @@ void udj1_loop() {
         }
 
         ssize_t len = recvfrom(sock, buf, sizeof(buf), 0, nullptr, nullptr);
+        if (len < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+                continue;
+            }
+            std::cerr << "[UDJ1] recvfrom() failed" << std::endl;
+            break;
+        }
         if (len < 8 + EXPECTED_COUNT * 4) continue;
         if (std::memcmp(buf, "UDJ1", 4) != 0) continue;
 
@@ -60,4 +86,20 @@ void udj1_loop() {
             send_position(NODE_ID[i], angles[i]);
         }
     }
+
+    close(sock);
+}
+
+void start_udj1_thread() {
+    std::cout << "[UDJ1] start / UDJ1パケット受信開始." << std::endl;
+    
+    udj1_thread = std::thread(udj1_loop);
+}
+
+void stop_udj1_thread() {
+    if (udj1_thread.joinable()) {
+        udj1_thread.join();
+    }
+
+    std::cout << "[UDJ1] stopped / 終了しました." << std::endl;
 }

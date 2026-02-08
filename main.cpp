@@ -4,7 +4,7 @@
 #include "ctrl_manager.h"
 #include "logger.h"
 #include "pot_handler.h"
-//#include "udj1_handler.h"
+#include "udj1_handler.h"
 #include "thread_safe_store.h"
 #include "stdin_writer.h"
 
@@ -21,6 +21,7 @@ int main() {
     start_pot_thread();
     start_ctrl_thread();
 	start_logger_thread();
+    start_udj1_thread();
 
     std::cout << "[GW] All threads started. / 全ての通信スレッドを起動しました." << std::endl;
     // udj1_loop();
@@ -28,6 +29,7 @@ int main() {
     
     // スレッドの終了を待つ.
     std::cout << "[GW] Stopping threads. / 通信スレッドを終了します." << std::endl;
+    stop_udj1_thread();
     stop_ctrl_thread();
 	stop_logger_thread();
     stop_pot_thread();

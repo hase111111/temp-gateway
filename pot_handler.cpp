@@ -36,16 +36,28 @@ static std::thread pot_thread{};
 
 static int open_can_socket(const char* ifname) {
     int s = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+    if (s < 0) {
+        std::cerr << "[POT] socket(PF_CAN) failed" << std::endl;
+        return -1;
+    }
 
     ifreq ifr{};
     std::strcpy(ifr.ifr_name, ifname);
-    ioctl(s, SIOCGIFINDEX, &ifr);
+    if (ioctl(s, SIOCGIFINDEX, &ifr) < 0) {
+        std::cerr << "[POT] ioctl(SIOCGIFINDEX) failed" << std::endl;
+        close(s);
+        return -1;
+    }
 
     sockaddr_can addr{};
     addr.can_family  = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
 
-    [[maybe_unused]]auto _ = bind(s, (sockaddr*)&addr, sizeof(addr));
+    if (bind(s, (sockaddr*)&addr, sizeof(addr)) < 0) {
+        std::cerr << "[POT] bind(CAN) failed" << std::endl;
+        close(s);
+        return -1;
+    }
     return s;
 }
 
@@ -54,15 +66,28 @@ static int open_can_socket(const char* ifname) {
 static void pot_loop() {
     // ----- CAN socket -----
     const int can_sock = open_can_socket("can0");
+    if (can_sock < 0) {
+        return;
+    }
 
     // ----- UDP socket -----
     const int udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (udp_sock < 0) {
+        std::cerr << "[POT] socket(AF_INET) failed" << std::endl;
+        close(can_sock);
+        return;
+    }
 
     sockaddr_in rx_addr{};
     rx_addr.sin_family      = AF_INET;
     rx_addr.sin_port        = htons(POT_RX_PORT);
     rx_addr.sin_addr.s_addr = INADDR_ANY;
-    [[maybe_unused]]auto _ = bind(udp_sock, (sockaddr*)&rx_addr, sizeof(rx_addr));
+    if (bind(udp_sock, (sockaddr*)&rx_addr, sizeof(rx_addr)) < 0) {
+        std::cerr << "[POT] bind(UDP) failed" << std::endl;
+        close(udp_sock);
+        close(can_sock);
+        return;
+    }
 
     std::cout << "[POT] listening POTQ on " << POT_RX_PORT << std::endl;
 
