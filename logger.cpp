@@ -9,14 +9,15 @@
 #include <fstream>
 #include <chrono>
 #include <cstring>
+#include <ctime>
 #include <iomanip>
-#include <sstream>
+#include <array>
 #include <sys/stat.h>
 #include <iostream>
 
 constexpr int JOINT_NUM = 16;
 constexpr double FLUSH_INTERVAL = 0.3;
-const char* LOG_DIR = "/home/saurus2/gateway/logs";
+const char* LOG_DIR = "logs";
 
 struct LogRow {
     double time;
@@ -41,12 +42,14 @@ static void writer_loop() {
     auto t = std::chrono::system_clock::now();
     auto tt = std::chrono::system_clock::to_time_t(t);
 
-    std::stringstream ss;
-    ss << LOG_DIR << "/log_udp_"
-       << std::put_time(std::localtime(&tt), "%Y%m%d_%H%M%S")
-       << ".csv";
+    std::array<char, 32> ts_buf{};
+    std::tm tm_buf{};
+    localtime_r(&tt, &tm_buf);
+    std::strftime(ts_buf.data(), ts_buf.size(), "%Y%m%d_%H%M%S", &tm_buf);
+    std::string log_path = std::string(LOG_DIR) + "/log_udp_" + ts_buf.data() + ".csv";
 
-    std::ofstream ofs(ss.str());
+    std::ofstream ofs(log_path);
+    
     if (!ofs.is_open()) {
     std::cerr << "[LOGGER] file open failed" << std::endl;
 	}
@@ -85,14 +88,20 @@ static void writer_loop() {
 }
 
 void logger_start() {
-	std::cout << "[LOGGER] start" << std::endl;
+	std::cout << "[LOGGER] start / ログ書き込み開始." << std::endl;
     running = true;
     writer_thread = std::thread(writer_loop);
 }
 
 void logger_stop() {
+    // 書き込みを終了する．(loopが終了する．)
     running = false;
-    if (writer_thread.joinable()) writer_thread.join();
+
+    // 書き込みスレッドの終了を待つ．
+    if (writer_thread.joinable()) {
+        writer_thread.join();
+    }
+    std::cout << "[LOGGER] stopped / 終了しました." << std::endl;
 }
 
 void logger_push(double time, const float* joint) {

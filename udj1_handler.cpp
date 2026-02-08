@@ -1,9 +1,3 @@
-#include "udj1_handler.h"
-#include "ctrl_manager.h"
-#include "can_utils.h"
-#include "logger.h"
-#include "thread_priority.h"
-
 #include <cstring>
 #include <thread>
 #include <sys/socket.h>
@@ -11,18 +5,23 @@
 #include <unistd.h>
 #include <chrono>
 
+#include "udj1_handler.h"
+#include "ctrl_manager.h"
+#include "can_utils.h"
+#include "logger.h"
+#include "thread_priority.h"
+
 static double now_time() {
     using clock = std::chrono::steady_clock;
     static const auto t0 = clock::now();
     return std::chrono::duration<double>(clock::now() - t0).count();
 }
 
-
 constexpr int UDP_UDJ1_PORT = 50000;
 constexpr int EXPECTED_COUNT = 16;
 
 static const int NODE_ID[EXPECTED_COUNT] = {
-    33,34,3,4,5,6,7,8,9,10,11,12,13,14,15,16
+    1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16
 };
 
 void udj1_loop() {
