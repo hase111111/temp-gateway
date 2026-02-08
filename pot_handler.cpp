@@ -154,3 +154,9 @@ void start_pot_thread()
     // ポテンショメータの読み取りスレッドを起動.
     pot_thread = std::thread(pot_loop);
 }
+
+void stop_pot_thread() {
+    if (pot_thread.joinable()) {
+        pot_thread.join();
+    }
+}

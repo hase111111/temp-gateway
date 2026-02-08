@@ -21,13 +21,14 @@ static const int NODE_ID[16] = {
 };
 
 static std::atomic<SystemState> state{SystemState::INIT};
+static std::thread ctrl_thread;
 
 SystemState get_system_state() {
     return state.load();
 }
 
 static void ctrl_loop() {
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    const int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
     sockaddr_in addr{};
     addr.sin_family      = AF_INET;
@@ -70,5 +71,11 @@ static void ctrl_loop() {
 }
 
 void start_ctrl_thread() {
-    std::thread(ctrl_loop).detach();
+    ctrl_thread = std::thread(ctrl_loop);
+}
+
+void stop_ctrl_thread() {
+    if (ctrl_thread.joinable()) {
+        ctrl_thread.join();
+    }
 }

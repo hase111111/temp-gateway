@@ -6,10 +6,20 @@
 #include <shared_mutex>
 #include <stdexcept>
 #include <string>
+#include <typeinfo>
 #include <unordered_map>
 
 class ThreadSafeStore final {
 public:
+    enum class ValueType {
+        kMissing,
+        kBool,
+        kInt,
+        kDouble,
+        kString,
+        kOther,
+    };
+
     ThreadSafeStore() = default;
     ~ThreadSafeStore() = default;
 
@@ -69,6 +79,33 @@ public:
     bool Has(const std::string& key) const {
         std::shared_lock<std::shared_mutex> lock(mutex_);
         return data_.count(key) > 0;
+    }
+
+    // =========================
+    // GetType
+    // =========================
+    ValueType GetType(const std::string& key) const {
+        std::shared_lock<std::shared_mutex> lock(mutex_);
+
+        const auto it = data_.find(key);
+        if (it == data_.end()) {
+            return ValueType::kMissing;
+        }
+
+        const std::type_info& type = it->second.type();
+        if (type == typeid(bool)) {
+            return ValueType::kBool;
+        }
+        if (type == typeid(int)) {
+            return ValueType::kInt;
+        }
+        if (type == typeid(double)) {
+            return ValueType::kDouble;
+        }
+        if (type == typeid(std::string)) {
+            return ValueType::kString;
+        }
+        return ValueType::kOther;
     }
 
 private:

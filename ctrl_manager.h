@@ -1,4 +1,5 @@
 #pragma once
+
 #include <atomic>
 
 enum class SystemState {
@@ -9,4 +10,5 @@ enum class SystemState {
 };
 
 void start_ctrl_thread();
+void stop_ctrl_thread();
 SystemState get_system_state();

@@ -8,3 +8,4 @@
 // ポテンショメータの値は 12bit ADC 値 (0..4095) である．
 
 void start_pot_thread();
+void stop_pot_thread();

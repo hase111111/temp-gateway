@@ -4,8 +4,9 @@
 #include "ctrl_manager.h"
 #include "logger.h"
 #include "pot_handler.h"
-#include "udj1_handler.h"
+//#include "udj1_handler.h"
 #include "thread_safe_store.h"
+#include "stdin_writer.h"
 
 int main() {
     std::cout << "[GW] Gateway Start. / ゲートウエイマイコンを起動します." << std::endl;
@@ -21,10 +22,15 @@ int main() {
     start_ctrl_thread();
 	start_logger_thread();
 
-    std::cout << "[GW] CTRL ready, waiting commands" << std::endl;
-    udj1_loop();
-
+    std::cout << "[GW] All threads started. / 全ての通信スレッドを起動しました." << std::endl;
+    // udj1_loop();
+    StdinWriter{}.Run();
+    
+    // スレッドの終了を待つ.
+    std::cout << "[GW] Stopping threads. / 通信スレッドを終了します." << std::endl;
+    stop_ctrl_thread();
 	stop_logger_thread();
+    stop_pot_thread();
 
     // 終了処理.
     std::cout << "[GW] Stopping CAN communication. / CAN通信を終了します." << std::endl;
