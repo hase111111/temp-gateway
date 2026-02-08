@@ -12,7 +12,7 @@
 #include "udj1_handler.h"
 
 #include "can_utils.h"
-#include "ctrl_manager.h"
+#include "system_state.h"
 #include "logger.h"
 #include "thread_priority.h"
 #include "thread_safe_store.h"
@@ -53,7 +53,7 @@ static void udj1_loop() {
         return;
     }
 
-    int flags = fcntl(sock, F_GETFL, 0);
+    const int flags = fcntl(sock, F_GETFL, 0);
     if (flags < 0 || fcntl(sock, F_SETFL, flags | O_NONBLOCK) < 0) {
         std::cerr << "[UDJ1] fcntl(O_NONBLOCK) failed" << std::endl;
         close(sock);
@@ -63,7 +63,8 @@ static void udj1_loop() {
     uint8_t buf[1024];
 
     while (!g_thread_safe_store.Get<bool>("fin")) {
-        if (get_system_state() != SystemState::RUN) {
+        const auto state = g_thread_safe_store.Get<SystemState>("system_state");
+        if (state == SystemState::RUN) {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
             continue;
         }
@@ -81,7 +82,7 @@ static void udj1_loop() {
         if (std::memcmp(buf, "UDJ1", 4) != 0) continue;
 
         float* angles = reinterpret_cast<float*>(buf + 8);
-		double t = now_time();
+		const double t = now_time();
 		
 		logger_push(t, angles);
         for (int i = 0; i < EXPECTED_COUNT; i++) {

@@ -7,6 +7,7 @@
 #include "udj1_handler.h"
 #include "thread_safe_store.h"
 #include "stdin_writer.h"
+#include "system_state.h"
 
 int main() {
     std::cout << "[GW] Gateway Start. / ゲートウエイマイコンを起動します." << std::endl;
@@ -17,6 +18,8 @@ int main() {
 
     g_thread_safe_store.Set<bool>("fin", false);
     g_thread_safe_store.Set<bool>("cal_end", false);
+    g_thread_safe_store.Set<int>("pot_disp", 0);
+    g_thread_safe_store.Set<SystemState>("system_state", SystemState::INIT);
 
     // その後, 各種スレッドを起動.
     start_pot_thread();

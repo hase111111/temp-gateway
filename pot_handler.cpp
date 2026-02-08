@@ -110,8 +110,17 @@ static void pot_loop() {
 
     uint8_t buf[1500];
     std::array<std::array<uint16_t, ADC_PER_PICO>, NUM_PICO> latest{};
+    auto disp_until = std::chrono::steady_clock::time_point::min();
 
     while (!g_thread_safe_store.Get<bool>("fin")) {
+        if (const auto disp = g_thread_safe_store.TryGet<int>("pot_disp")) {
+            if (*disp > 0) {
+                disp_until = std::chrono::steady_clock::now()
+                           + std::chrono::seconds(*disp);
+                g_thread_safe_store.Set<int>("pot_disp", 0);
+            }
+        }
+
         sockaddr_in src{};
         socklen_t slen = sizeof(src);
         bool has_request = false;
@@ -148,18 +157,25 @@ static void pot_loop() {
                 continue;
             }
 
-            const int pico = rx.can_id - CAN_RESP_BASE; // 0..5
+            const int pico = rx.can_id - CAN_RESP_BASE;  // 0..5
             const int pair_count = rx.can_dlc / 2;
             const int limit = (pair_count < ADC_PER_PICO) ? pair_count : ADC_PER_PICO;
 
-            std::cout << "[POT] can " << std::hex << rx.can_id << std::dec << ":";
+            const bool should_print = std::chrono::steady_clock::now() < disp_until;
+            if (should_print) {
+                std::cout << "[POT] can " << std::hex << rx.can_id << std::dec << ":";
+            }
             for (int i = 0; i < limit; ++i) {
                 uint16_t adc = rx.data[i * 2] | (rx.data[i * 2 + 1] << 8);
                 latest[pico][i] = adc;
-                std::cout << " ch" << (pico * ADC_PER_PICO + i)
-                          << "=" << adc;
+                if (should_print) {
+                    std::cout << " ch" << (pico * ADC_PER_PICO + i)
+                              << "=" << adc;
+                }
             }
-            std::cout << std::endl;
+            if (should_print) {
+                std::cout << std::endl;
+            }
         }
 
         if (!has_request) {

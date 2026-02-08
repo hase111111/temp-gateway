@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include <atomic>
 #include <chrono>
 #include <cstring>
 #include <cerrno>
@@ -26,12 +25,7 @@ static const int NODE_ID[16] = {
     13,14,15,16
 };
 
-static std::atomic<SystemState> state{SystemState::INIT};
 static std::thread ctrl_thread;
-
-SystemState get_system_state() {
-    return state.load();
-}
 
 static void ctrl_loop() {
     const int sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -50,7 +44,7 @@ static void ctrl_loop() {
         return;
     }
 
-    int flags = fcntl(sock, F_GETFL, 0);
+    const int flags = fcntl(sock, F_GETFL, 0);
     if (flags < 0 || fcntl(sock, F_SETFL, flags | O_NONBLOCK) < 0) {
         std::cerr << "[CTRL] fcntl(O_NONBLOCK) failed" << std::endl;
         close(sock);
@@ -74,30 +68,31 @@ static void ctrl_loop() {
 
         const uint8_t cmd = buf[4];
 
+        const SystemState state = g_thread_safe_store.Get<SystemState>("system_state");
         if (cmd == 1 && state == SystemState::INIT) {
             for (const auto& id : NODE_ID) {
                 send_axis_state(id, AXIS_STATE_FULL_CALIBRATION_SEQUENCE);
             }
             
             std::this_thread::sleep_for(std::chrono::seconds(10));
-            state = SystemState::CALIBRATED;
+            g_thread_safe_store.Set<SystemState>("system_state", SystemState::CALIBRATED);
         } else if (cmd == 2 && state == SystemState::CALIBRATED) {
             for (const auto& id : NODE_ID) {
                 send_axis_state(id, AXIS_STATE_CLOSED_LOOP_CONTROL);
             }
 
-            state = SystemState::READY;
+            g_thread_safe_store.Set<SystemState>("system_state", SystemState::READY);
         } else if (cmd == 6 && state == SystemState::READY) {
-            state = SystemState::RUN;
+            g_thread_safe_store.Set<SystemState>("system_state", SystemState::RUN);
         } else if (cmd == 7 && state == SystemState::RUN) {
-            state = SystemState::READY;
+            g_thread_safe_store.Set<SystemState>("system_state", SystemState::READY);
         }
     }
     close(sock);
 }
 
 void start_ctrl_thread() {
-    std::cout << "[CTRL] start / コントロールコマンド受信開始." << std::endl;
+    std::cout << "[CTRL] Start. / コントロールコマンド受信開始." << std::endl;
     
     ctrl_thread = std::thread(ctrl_loop);
 }
@@ -107,5 +102,5 @@ void stop_ctrl_thread() {
         ctrl_thread.join();
     }
 
-    std::cout << "[CTRL] stopped / 終了しました." << std::endl;
+    std::cout << "[CTRL] Stopped. / 終了しました." << std::endl;
 }
