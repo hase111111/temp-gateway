@@ -13,6 +13,7 @@
 #include <cstring>
 #include <iostream>
 #include <thread>
+#include <array>
 #include <vector>
 
 #include "thread_safe_store.h"
@@ -108,49 +109,39 @@ static void pot_loop() {
     std::cout << "[POT] listening POTQ on " << POT_RX_PORT << std::endl;
 
     uint8_t buf[1500];
+    std::array<std::array<uint16_t, ADC_PER_PICO>, NUM_PICO> latest{};
 
     while (!g_thread_safe_store.Get<bool>("fin")) {
         sockaddr_in src{};
         socklen_t slen = sizeof(src);
+        bool has_request = false;
+        uint8_t group_id = 0;
+        uint8_t req_id = 0;
 
         const ssize_t len = recvfrom(udp_sock, buf, sizeof(buf), 0,
                                (sockaddr*)&src, &slen);
-        if (len < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                continue;
-            }
+        if (len >= 6 && std::memcmp(buf, POTQ_MAGIC, 4) == 0) {
+            group_id = buf[4];
+            req_id = buf[5];
+            has_request = true;
+        } else if (len < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
             std::cerr << "[POT] recvfrom() failed" << std::endl;
             break;
         }
-        if (len < 6) { continue; }
-        if (std::memcmp(buf, POTQ_MAGIC, 4) != 0) { continue; }
 
-        uint8_t group_id = buf[4];
-        uint8_t req_id   = buf[5];
-
-        // ===== collect responses =====
-        struct Sample {
-            uint8_t ch;
-            uint16_t adc;
-        };
-        std::vector<Sample> samples;
-
-        auto deadline = std::chrono::steady_clock::now()
-                      + std::chrono::milliseconds(50);
-
-        while (std::chrono::steady_clock::now() < deadline) {
+        for (;;) {
             can_frame rx{};
             ssize_t r = read(can_sock, &rx, sizeof(rx));
             if (r < 0) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                    continue;
+                    break;
                 }
                 std::cerr << "[POT] read(CAN) failed" << std::endl;
                 break;
             }
-            if (r == 0) { continue; }
+            if (r == 0) {
+                break;
+            }
 
             if (rx.can_id < CAN_RESP_BASE ||
                 rx.can_id >= CAN_RESP_BASE + NUM_PICO) {
@@ -158,39 +149,42 @@ static void pot_loop() {
             }
 
             const int pico = rx.can_id - CAN_RESP_BASE; // 0..5
+            const int pair_count = rx.can_dlc / 2;
+            const int limit = (pair_count < ADC_PER_PICO) ? pair_count : ADC_PER_PICO;
 
-            for (int i = 0; i + 1 < rx.can_dlc; i += 2) {
-                uint16_t adc =
-                    rx.data[i] | (rx.data[i+1] << 8);
-
-                const uint8_t ch = pico * ADC_PER_PICO + (i / 2);
-                samples.push_back({ch, adc});
-            }
-        }
-
-        if (!samples.empty()) {
-            std::cout << "[POT] values:";
-            for (const auto& s : samples) {
-                std::cout << " ch" << static_cast<int>(s.ch)
-                          << "=" << s.adc;
+            std::cout << "[POT] can " << std::hex << rx.can_id << std::dec << ":";
+            for (int i = 0; i < limit; ++i) {
+                uint16_t adc = rx.data[i * 2] | (rx.data[i * 2 + 1] << 8);
+                latest[pico][i] = adc;
+                std::cout << " ch" << (pico * ADC_PER_PICO + i)
+                          << "=" << adc;
             }
             std::cout << std::endl;
         }
 
+        if (!has_request) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            continue;
+        }
+
         // ===== build POTR =====
         std::vector<uint8_t> pkt;
-        pkt.resize(7 + samples.size() * 3);
+        pkt.resize(7 + NUM_PICO * ADC_PER_PICO * 3);
 
         std::memcpy(&pkt[0], POTR_MAGIC, 4);
         pkt[4] = group_id;
         pkt[5] = req_id;
-        pkt[6] = samples.size();
+        pkt[6] = NUM_PICO * ADC_PER_PICO;
 
         size_t off = 7;
-        for (const auto& s : samples) {
-            pkt[off++] = s.ch;
-            pkt[off++] = s.adc & 0xFF;
-            pkt[off++] = (s.adc >> 8) & 0xFF;
+        for (int pico = 0; pico < NUM_PICO; ++pico) {
+            for (int ch = 0; ch < ADC_PER_PICO; ++ch) {
+                const uint8_t out_ch = pico * ADC_PER_PICO + ch;
+                const uint16_t adc = latest[pico][ch];
+                pkt[off++] = out_ch;
+                pkt[off++] = adc & 0xFF;
+                pkt[off++] = (adc >> 8) & 0xFF;
+            }
         }
 
         sockaddr_in tx{};
@@ -201,7 +195,7 @@ static void pot_loop() {
         sendto(udp_sock, pkt.data(), pkt.size(), 0,
                (sockaddr*)&tx, sizeof(tx));
 
-        std::cout << "[POT] reply " << samples.size()
+        std::cout << "[POT] reply " << (NUM_PICO * ADC_PER_PICO)
                   << " samples" << std::endl;
     }
 
