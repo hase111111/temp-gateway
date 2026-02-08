@@ -3,6 +3,8 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #include <net/if.h>
@@ -89,6 +91,14 @@ static void pot_loop() {
         return;
     }
 
+    int flags = fcntl(udp_sock, F_GETFL, 0);
+    if (flags < 0 || fcntl(udp_sock, F_SETFL, flags | O_NONBLOCK) < 0) {
+        std::cerr << "[POT] fcntl(O_NONBLOCK) failed" << std::endl;
+        close(udp_sock);
+        close(can_sock);
+        return;
+    }
+
     std::cout << "[POT] listening POTQ on " << POT_RX_PORT << std::endl;
 
     uint8_t buf[1500];
@@ -99,6 +109,14 @@ static void pot_loop() {
 
         ssize_t len = recvfrom(udp_sock, buf, sizeof(buf), 0,
                                (sockaddr*)&src, &slen);
+        if (len < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                continue;
+            }
+            std::cerr << "[POT] recvfrom() failed" << std::endl;
+            break;
+        }
         if (len < 6) { continue; }
         if (std::memcmp(buf, POTQ_MAGIC, 4) != 0) { continue; }
 
@@ -170,6 +188,9 @@ static void pot_loop() {
         std::cout << "[POT] reply " << samples.size()
                   << " samples" << std::endl;
     }
+
+    close(udp_sock);
+    close(can_sock);
 }
 
 // ======================================================

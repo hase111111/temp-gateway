@@ -2,6 +2,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <atomic>
 #include <chrono>
@@ -49,11 +50,11 @@ static void ctrl_loop() {
         return;
     }
 
-    timeval tv{};
-    tv.tv_sec = 0;
-    tv.tv_usec = 200000;
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
-        std::cerr << "[CTRL] setsockopt(SO_RCVTIMEO) failed" << std::endl;
+    int flags = fcntl(sock, F_GETFL, 0);
+    if (flags < 0 || fcntl(sock, F_SETFL, flags | O_NONBLOCK) < 0) {
+        std::cerr << "[CTRL] fcntl(O_NONBLOCK) failed" << std::endl;
+        close(sock);
+        return;
     }
 
     uint8_t buf[8];
@@ -62,6 +63,7 @@ static void ctrl_loop() {
         ssize_t len = recvfrom(sock, buf, sizeof(buf), 0, nullptr, nullptr);
         if (len < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 continue;
             }
             std::cerr << "[CTRL] recvfrom() failed" << std::endl;
