@@ -174,7 +174,7 @@ static void pot_loop() {
                 }
             }
             if (should_print) {
-                std::cout << std::endl;
+                std::cout << std::endl << std::endl;
             }
 
             // グローバル変数にも保存しておく．

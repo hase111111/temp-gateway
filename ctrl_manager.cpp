@@ -101,8 +101,11 @@ static void calibrate_zero_position() {
             } else {
                 calibrated[i] = true;
             }
-        }
 
+        }
+        
+        std::cout << std::endl << std::endl;
+        
         // 少し待つ.
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
