@@ -36,12 +36,16 @@ static void calibrate_zero_position() {
     // 各関節に対して，ポテンショメータ値を送信する.
     std::array<bool, 16> calibrated{};
     std::array<double, 16> last_send_pos{0.0};
+
+    // ☆ここの値の正負を変更すると，キャリブレーション時の回転方向が変わる．
     const std::array<float, 16> vec_pm{-1.0f, -1.0f, 1.0f,
                                  -1.0f, -1.0f, -1.0f,
                                  -1.0f, -1.0f, 1.0f,
                                  1.0f, 1.0f, -1.0f,
                                  -1.0f, -1.0f,
                                  -1.0f, -1.0f};
+
+    // ☆関節ごとの許容誤差値（ポテンショメータ値の差分）．
     const std::array<float, 16> clam_val{
         50.0f,50.0f,200.0f,
         50.0f,50.0f,200.0f,
@@ -49,6 +53,7 @@ static void calibrate_zero_position() {
         50.0f,50.0f,200.0f,
        100.0f,100.0f,
        100.0f,100.0f};
+       
     constexpr int kCalibGroupSize = 3;
     constexpr int kCalibEndIndex = 12; // 12..15 are skipped
     int current_group = 0;
