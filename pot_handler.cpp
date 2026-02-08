@@ -107,7 +107,7 @@ static void pot_loop() {
         sockaddr_in src{};
         socklen_t slen = sizeof(src);
 
-        ssize_t len = recvfrom(udp_sock, buf, sizeof(buf), 0,
+        const ssize_t len = recvfrom(udp_sock, buf, sizeof(buf), 0,
                                (sockaddr*)&src, &slen);
         if (len < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {

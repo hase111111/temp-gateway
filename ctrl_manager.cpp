@@ -60,7 +60,7 @@ static void ctrl_loop() {
     uint8_t buf[8];
 
     while (!g_thread_safe_store.Get<bool>("fin")) {
-        ssize_t len = recvfrom(sock, buf, sizeof(buf), 0, nullptr, nullptr);
+        const ssize_t len = recvfrom(sock, buf, sizeof(buf), 0, nullptr, nullptr);
         if (len < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -69,33 +69,27 @@ static void ctrl_loop() {
             std::cerr << "[CTRL] recvfrom() failed" << std::endl;
             break;
         }
-        if (len < 6) continue;
-        if (std::memcmp(buf, "CTRL", 4) != 0) continue;
+        if (len < 6) { continue; }
+        if (std::memcmp(buf, "CTRL", 4) != 0) { continue; }
 
-        uint8_t cmd = buf[4];
+        const uint8_t cmd = buf[4];
 
         if (cmd == 1 && state == SystemState::INIT) {
-            for (int id : NODE_ID) {
+            for (const auto& id : NODE_ID) {
                 send_axis_state(id, AXIS_STATE_FULL_CALIBRATION_SEQUENCE);
             }
             
             std::this_thread::sleep_for(std::chrono::seconds(10));
             state = SystemState::CALIBRATED;
-        }
-
-        else if (cmd == 2 && state == SystemState::CALIBRATED) {
-            for (int id : NODE_ID) {
+        } else if (cmd == 2 && state == SystemState::CALIBRATED) {
+            for (const auto& id : NODE_ID) {
                 send_axis_state(id, AXIS_STATE_CLOSED_LOOP_CONTROL);
             }
 
             state = SystemState::READY;
-        }
-
-        else if (cmd == 6 && state == SystemState::READY) {
+        } else if (cmd == 6 && state == SystemState::READY) {
             state = SystemState::RUN;
-        }
-
-        else if (cmd == 7 && state == SystemState::RUN) {
+        } else if (cmd == 7 && state == SystemState::RUN) {
             state = SystemState::READY;
         }
     }
