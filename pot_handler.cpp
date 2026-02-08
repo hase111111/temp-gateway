@@ -113,11 +113,11 @@ static void pot_loop() {
     auto disp_until = std::chrono::steady_clock::time_point::min();
 
     while (!g_thread_safe_store.Get<bool>("fin")) {
-        if (const auto disp = g_thread_safe_store.TryGet<int>("pot_disp")) {
+        if (const auto disp = g_thread_safe_store.TryGet<int>("pot")) {
             if (*disp > 0) {
                 disp_until = std::chrono::steady_clock::now()
                            + std::chrono::seconds(*disp);
-                g_thread_safe_store.Set<int>("pot_disp", 0);
+                g_thread_safe_store.Set<int>("pot", 0);
             }
         }
 
