@@ -33,9 +33,6 @@ static std::thread ctrl_thread;
 static void calibrate_zero_position() {
     std::cout << "[CTRL] Potentiometer zero calibration command received. / ポテンショメータゼロ点キャリブレーションを行います．" << std::endl;
 
-    // ポテンショメータの最新値を取得する.
-    const auto pot_values = g_pot_values.Back();
-    
     // 各関節に対して，ポテンショメータ値を送信する.
     std::array<bool, 16> calibrated{};
 
@@ -64,6 +61,8 @@ static void calibrate_zero_position() {
             break;
         }
 
+        const auto pot_values = g_pot_values.Back();
+
         for (int i = 0; i < 16; ++i) {
             if (calibrated[i] || i != 2) {
                 continue;
@@ -84,7 +83,7 @@ static void calibrate_zero_position() {
                     << std::endl;
             
             // ポテンショメータ値を目標値に合わせるようにODriveに送信する.
-            const float rot_diff = 1.0f;
+            const float rot_diff = 0.1f;
             if (std::abs(target - now) > 10) {
                 const auto send_pos = (now < target) ?
                     current_rot + rot_diff :
