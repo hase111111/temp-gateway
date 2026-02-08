@@ -1,0 +1,106 @@
+#include "logger.h"
+#include "thread_priority.h"
+
+#include <queue>
+#include <vector>
+#include <mutex>
+#include <thread>
+#include <atomic>
+#include <fstream>
+#include <chrono>
+#include <cstring>
+#include <iomanip>
+#include <sstream>
+#include <sys/stat.h>
+#include <iostream>
+
+constexpr int JOINT_NUM = 16;
+constexpr double FLUSH_INTERVAL = 0.3;
+const char* LOG_DIR = "/home/saurus2/gateway/logs";
+
+struct LogRow {
+    double time;
+    float joint[JOINT_NUM];
+};
+
+static std::queue<LogRow> log_queue;
+static std::mutex log_mutex;
+static std::atomic<bool> running{false};
+static std::thread writer_thread;
+
+static double now_sec() {
+    using clock = std::chrono::steady_clock;
+    static const auto t0 = clock::now();
+    return std::chrono::duration<double>(clock::now() - t0).count();
+}
+
+static void writer_loop() {
+	set_fifo_priority(10);
+    mkdir(LOG_DIR, 0755);
+
+    auto t = std::chrono::system_clock::now();
+    auto tt = std::chrono::system_clock::to_time_t(t);
+
+    std::stringstream ss;
+    ss << LOG_DIR << "/log_udp_"
+       << std::put_time(std::localtime(&tt), "%Y%m%d_%H%M%S")
+       << ".csv";
+
+    std::ofstream ofs(ss.str());
+    if (!ofs.is_open()) {
+    std::cerr << "[LOGGER] file open failed" << std::endl;
+	}
+    ofs << "time";
+    for (int i = 0; i < JOINT_NUM; i++) ofs << ",joint_" << i;
+    ofs << "\n";
+
+    std::vector<LogRow> buffer;
+    auto last_flush = std::chrono::steady_clock::now();
+
+    while (running || !log_queue.empty()) {
+        {
+            std::lock_guard<std::mutex> lk(log_mutex);
+            while (!log_queue.empty()) {
+                buffer.push_back(log_queue.front());
+                log_queue.pop();
+            }
+        }
+
+        auto now = std::chrono::steady_clock::now();
+        if (!buffer.empty() &&
+            std::chrono::duration<double>(now - last_flush).count() >= FLUSH_INTERVAL) {
+
+            for (auto& r : buffer) {
+                ofs << std::fixed << std::setprecision(6) << r.time;
+                for (float v : r.joint) ofs << "," << v;
+                ofs << "\n";
+            }
+            ofs.flush();
+            buffer.clear();
+            last_flush = now;
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+}
+
+void logger_start() {
+	std::cout << "[LOGGER] start" << std::endl;
+    running = true;
+    writer_thread = std::thread(writer_loop);
+}
+
+void logger_stop() {
+    running = false;
+    if (writer_thread.joinable()) writer_thread.join();
+}
+
+void logger_push(double time, const float* joint) {
+    LogRow r{};
+    r.time = time;
+    std::memcpy(r.joint, joint, sizeof(float) * JOINT_NUM);
+
+    std::lock_guard<std::mutex> lk(log_mutex);
+    if (log_queue.size() < 5000)
+        log_queue.push(r);
+}
