@@ -46,7 +46,7 @@ static void writer_loop() {
     std::tm tm_buf{};
     localtime_r(&tt, &tm_buf);
     std::strftime(ts_buf.data(), ts_buf.size(), "%Y%m%d_%H%M%S", &tm_buf);
-    std::string log_path = std::string(LOG_DIR) + "/log_udp_" + ts_buf.data() + ".csv";
+    const std::string log_path = std::string(LOG_DIR) + "/log_udp_" + ts_buf.data() + ".csv";
 
     std::ofstream ofs(log_path);
     

@@ -34,7 +34,7 @@ void udj1_loop() {
     addr.sin_family      = AF_INET;
     addr.sin_port        = htons(UDP_UDJ1_PORT);
     addr.sin_addr.s_addr = INADDR_ANY;
-    const auto _ = bind(sock, (sockaddr*)&addr, sizeof(addr));
+    [[maybe_unused]] auto _ = bind(sock, (sockaddr*)&addr, sizeof(addr));
 
     uint8_t buf[1024];
 

@@ -23,7 +23,7 @@ void can_init(const char* ifname) {
     addr.can_family  = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
 
-    const auto _ = bind(can_sock, (sockaddr*)&addr, sizeof(addr));
+    [[maybe_unused]] auto _ = bind(can_sock, (sockaddr*)&addr, sizeof(addr));
 }
 
 void can_close() {
