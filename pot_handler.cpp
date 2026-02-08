@@ -180,8 +180,6 @@ static void pot_loop() {
             g_pot_values.PushBack(latest);
         }
 
-        if (std::chrono::steady_clock::now() < disp_until) { std::cout << std::endl; }
-
         if (!has_request) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
             continue;
