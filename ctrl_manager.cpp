@@ -44,7 +44,14 @@ static void calibrate_zero_position() {
         v = false;
     }
 
+    int c = 0;
     while(true) {
+        // 20秒で落とす
+        if (c++ > 200) {
+            std::cout << "[CTRL] Potentiometer zero calibration timeout. / ポテンショメータゼロ点キャリブレーションがタイムアウトしました．" << std::endl;
+            break;
+        }
+        
         bool all_done = true;
         for (const auto v : calibrated) {
             if (!v) {
