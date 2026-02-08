@@ -53,6 +53,8 @@ static void ctrl_loop() {
 
     uint8_t buf[8];
 
+    std::cout << "[CTRL] listening CTRL on " << CTRL_PORT << std::endl;
+
     while (!g_thread_safe_store.Get<bool>("fin")) {
         const ssize_t len = recvfrom(sock, buf, sizeof(buf), 0, nullptr, nullptr);
         if (len < 0) {
