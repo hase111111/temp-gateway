@@ -37,7 +37,7 @@ static std::thread udj1_thread;
 
 static void udj1_loop() {
 	set_fifo_priority(80);
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    const int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0) {
         std::cerr << "[UDJ1] socket() failed" << std::endl;
         return;

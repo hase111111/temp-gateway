@@ -16,6 +16,7 @@ int main() {
     can_init("can0");
 
     g_thread_safe_store.Set<bool>("fin", false);
+    g_thread_safe_store.Set<bool>("cal_end", false);
 
     // その後, 各種スレッドを起動.
     start_pot_thread();

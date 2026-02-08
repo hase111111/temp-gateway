@@ -161,6 +161,15 @@ static void pot_loop() {
             }
         }
 
+        if (!samples.empty()) {
+            std::cout << "[POT] values:";
+            for (const auto& s : samples) {
+                std::cout << " ch" << static_cast<int>(s.ch)
+                          << "=" << s.adc;
+            }
+            std::cout << std::endl;
+        }
+
         // ===== build POTR =====
         std::vector<uint8_t> pkt;
         pkt.resize(7 + samples.size() * 3);
