@@ -71,11 +71,16 @@ static void calibrate_zero_position() {
         const auto pot_values = g_pot_values.Back();
 
         for (int i = 0; i < 16; ++i) {
-            if (calibrated[i] || i != 2) {
+            if (calibrated[i]) {
                 continue;
             }
 
             // debug用
+            if (i == 11 || i == 10 || i == 9) {                
+            } else {
+                continue;
+            }
+
             const int now = pot_values[i / 3][i % 3];
             const float now_rot = static_cast<float>(now) / 4095.0f + 1.5f;
             const int target = POT_DEFAULT_ANGLES[i];
