@@ -36,12 +36,18 @@ static void calibrate_zero_position() {
     // 各関節に対して，ポテンショメータ値を送信する.
     std::array<bool, 16> calibrated{};
     std::array<double, 16> last_send_pos{0.0};
-    std::array<float, 16> vec_pm{-1.0f, -1.0f, 1.0f,
+    const std::array<float, 16> vec_pm{-1.0f, -1.0f, 1.0f,
                                  -1.0f, -1.0f, -1.0f,
-                                 -1.0f, -1.0f, -1.0f,
+                                 -1.0f, -1.0f, 1.0f,
                                  1.0f, 1.0f, -1.0f,
                                  -1.0f, -1.0f,
                                  -1.0f, -1.0f};
+    const std::array<float, 16> clam_val{100.0f,100.0f,150.0f,
+    100.0f,100.0f,150.0f,
+    100.0f,100.0f,150.0f,
+    100.0f,100.0f,150.0f,
+    100.0f,100.0f,
+    100.0f,100.0f};
 
     // 最初はすべて未キャリブレーション状態にする.
     for (auto& v : calibrated) {
@@ -94,7 +100,7 @@ static void calibrate_zero_position() {
             
             // ポテンショメータ値を目標値に合わせるようにODriveに送信する.
             const float rot_diff = 0.2f;  // 一回に送る回転量の差分(回転速度)
-            if (std::abs(target - now) > 50) {
+            if (std::abs(target - now) > clam_val[i]) {
                 last_send_pos[i] += ((now < target) ? rot_diff : -rot_diff) * vec_pm[i];
                 const float send_pos = last_send_pos[i];
                 send_position(i + 1, send_pos);
@@ -105,7 +111,7 @@ static void calibrate_zero_position() {
         }
         
         std::cout << std::endl << std::endl;
-        
+
         // 少し待つ.
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
