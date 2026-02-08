@@ -12,6 +12,7 @@
 #include "ctrl_manager.h"
 #include "logger.h"
 #include "thread_priority.h"
+#include "thread_safe_store.h"
 
 static double now_time() {
     using clock = std::chrono::steady_clock;
@@ -41,7 +42,7 @@ void udj1_loop() {
 
     uint8_t buf[1024];
 
-    while (true) {
+    while (!g_thread_safe_store.Get<bool>("fin")) {
         if (get_system_state() != SystemState::RUN) {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
             continue;

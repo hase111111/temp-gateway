@@ -9,6 +9,7 @@
 #include <thread>
 
 #include "can_utils.h"
+#include "thread_safe_store.h"
 
 constexpr int CTRL_PORT = 60000;
 
@@ -36,7 +37,7 @@ static void ctrl_loop() {
 
     uint8_t buf[8];
 
-    while (true) {
+    while (!g_thread_safe_store.Get<bool>("fin")) {
         ssize_t len = recvfrom(sock, buf, sizeof(buf), 0, nullptr, nullptr);
         if (len < 6) continue;
         if (std::memcmp(buf, "CTRL", 4) != 0) continue;

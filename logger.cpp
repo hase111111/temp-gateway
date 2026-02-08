@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "thread_priority.h"
+#include "thread_safe_store.h"
 
 constexpr int JOINT_NUM = 16;
 constexpr double FLUSH_INTERVAL = 0.3;
@@ -60,7 +61,7 @@ static void writer_loop() {
     std::vector<LogRow> buffer;
     auto last_flush = std::chrono::steady_clock::now();
 
-    while (running || !log_queue.empty()) {
+    while (!g_thread_safe_store.Get<bool>("fin") && (running || !log_queue.empty())) {
         {
             std::lock_guard<std::mutex> lk(log_mutex);
             while (!log_queue.empty()) {
