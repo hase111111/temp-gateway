@@ -56,17 +56,17 @@ static void ctrl_loop() {
     std::cout << "[CTRL] listening CTRL on " << CTRL_PORT << std::endl;
 
     while (!g_thread_safe_store.Get<bool>("fin")) {
-        const ssize_t len = recvfrom(sock, buf, sizeof(buf), 0, nullptr, nullptr);
-        if (len < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                continue;
-            }
-            std::cerr << "[CTRL] recvfrom() failed" << std::endl;
-            break;
-        }
-        if (len < 6) { continue; }
-        if (std::memcmp(buf, "CTRL", 4) != 0) { continue; }
+        // const ssize_t len = recvfrom(sock, buf, sizeof(buf), 0, nullptr, nullptr);
+        // if (len < 0) {
+        //     if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+        //         std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        //         continue;
+        //     }
+        //     std::cerr << "[CTRL] recvfrom() failed" << std::endl;
+        //     break;
+        // }
+        // if (len < 6) { continue; }
+        // if (std::memcmp(buf, "CTRL", 4) != 0) { continue; }
 
         // const uint8_t cmd = buf[4];
         const int8_t cmd = static_cast<int8_t>(g_thread_safe_store.Get<int>("cmd"));
