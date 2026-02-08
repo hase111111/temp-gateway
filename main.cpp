@@ -1,5 +1,4 @@
 #include <iostream>
-#include <thread>
 
 #include "can_utils.h"
 #include "ctrl_manager.h"

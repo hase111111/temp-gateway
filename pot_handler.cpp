@@ -41,7 +41,7 @@ static int open_can_socket(const char* ifname)
     addr.can_family  = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
 
-    bind(s, (sockaddr*)&addr, sizeof(addr));
+    const auto _ = bind(s, (sockaddr*)&addr, sizeof(addr));
     return s;
 }
 
@@ -59,7 +59,7 @@ static void pot_loop()
     rx_addr.sin_family      = AF_INET;
     rx_addr.sin_port        = htons(POT_RX_PORT);
     rx_addr.sin_addr.s_addr = INADDR_ANY;
-    bind(udp_sock, (sockaddr*)&rx_addr, sizeof(rx_addr));
+    const auto _ = bind(udp_sock, (sockaddr*)&rx_addr, sizeof(rx_addr));
 
     std::cout << "[POT] listening POTQ on " << POT_RX_PORT << std::endl;
 
