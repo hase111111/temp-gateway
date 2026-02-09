@@ -11,8 +11,11 @@ build.sh では cmake と make を用いてビルドを行います。
 実行ファイルは `build/temp-gateway` に生成されます。以下のコマンドで実行します。
 
 ```bash
-./bash/run.sh
+sudo ./bash/run.sh
 ```
+
+run.sh はスレッドの優先度を上げて実行するために sudo を用いています。
+注意してください。
 
 # プログラムの操作方法
 
