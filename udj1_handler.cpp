@@ -16,12 +16,7 @@
 #include "logger.h"
 #include "thread_priority.h"
 #include "global_variable.h"
-
-static double now_time() {
-    using clock = std::chrono::steady_clock;
-    static const auto t0 = clock::now();
-    return std::chrono::duration<double>(clock::now() - t0).count();
-}
+#include "time_utils.h"
 
 constexpr int UDP_UDJ1_PORT = 50000;
 constexpr int EXPECTED_COUNT = 16;
@@ -53,12 +48,13 @@ static void udj1_loop() {
         return;
     }
 
-    const int flags = fcntl(sock, F_GETFL, 0);
-    if (flags < 0 || fcntl(sock, F_SETFL, flags | O_NONBLOCK) < 0) {
-        std::cerr << "[UDJ1] fcntl(O_NONBLOCK) failed" << std::endl;
-        close(sock);
-        return;
-    }
+    // ☆ 非ブロッキングモードにする場合. 以下を有効化する.
+    // const int flags = fcntl(sock, F_GETFL, 0);
+    // if (flags < 0 || fcntl(sock, F_SETFL, flags | O_NONBLOCK) < 0) {
+    //     std::cerr << "[UDJ1] fcntl(O_NONBLOCK) failed" << std::endl;
+    //     close(sock);
+    //     return;
+    // }
 
     uint8_t buf[1024];
 
@@ -82,7 +78,7 @@ static void udj1_loop() {
         if (std::memcmp(buf, "UDJ1", 4) != 0) { continue; }
 
         float* angles = reinterpret_cast<float*>(buf + 8);
-		const double t = now_time();
+        const double t = now_time_sec();
 		
 		logger_push(t, angles);
         for (int i = 0; i < EXPECTED_COUNT; i++) {

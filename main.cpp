@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "pot_handler.h"
 #include "udj1_handler.h"
+#include "encoder_logger.h"
 #include "thread_safe_store.h"
 #include "stdin_writer.h"
 #include "global_variable.h"
@@ -26,6 +27,7 @@ int main() {
     start_ctrl_thread();
     start_udj1_thread();
 	start_logger_thread();
+    start_encoder_logger_thread();
 
     std::cout << "[GW] All threads started. / 全ての通信スレッドを起動しました." << std::endl;
     StdinWriter{}.Run();  // 標準入力からのコマンドを処理する．
@@ -36,6 +38,7 @@ int main() {
     stop_ctrl_thread();
     stop_udj1_thread();
 	stop_logger_thread();
+    stop_encoder_logger_thread();
 
     // 終了処理.
     std::cout << "[GW] Stopping CAN communication. / CAN通信を終了します." << std::endl;
